@@ -256,17 +256,20 @@ def load_models():
     models = {
         "Hybrid": {
             "model_class": HybridGANVAE,
-            "path": r"C:\Users\antis\Downloads\hybrid_model_final.pth",
+            "path": r"hybrid_model_final.pth",
+            # "path": r"C:\Users\antis\Downloads\hybrid_model_final.pth",
             "instance": None
         },
         "VAE": {
             "model_class": VAEOnly,
-            "path": r"C:\Users\antis\Downloads\vae_model_final.pth",
+            "path": r"vae_model_final.pth",
+            # "path": r"C:\Users\antis\Downloads\vae_model_final.pth",
             "instance": None
         },
         "GAN": {
             "model_class": GANOnly,
-            "path": r"C:\Users\antis\Downloads\gan_model_final.pth",
+            "path": r"gan_model_final.pth",
+            # "path": r"C:\Users\antis\Downloads\gan_model_final.pth",
             "instance": None
         }
     }
