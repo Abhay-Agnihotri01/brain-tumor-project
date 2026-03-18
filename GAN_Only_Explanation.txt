@@ -1,0 +1,32 @@
+# Detailed Explanation of Standalone GAN Model (Colab_Code_GAN_Only.py)
+
+This script acts as a baseline benchmark model using purely a Generative Adversarial Network (GAN) without the feature-compression abilities of a VAE. It is used in the research paper's Ablation Study.
+
+## 1. Setup & Data Loading (Lines 1-94)
+- Exact same data pipeline and environment setup as the Hybrid Model. The Kaggle dataset is downloaded, unzipped, resized to 64x64, grayscaled, mapped to binary labels (0 for Normal, 1 for Tumor), and loaded into PyTorch `DataLoaders`.
+
+## 2. Network Architecture (Lines 96-160)
+This model removes the Encoder component entirely.
+- **Lines 98-119:** `ClassifierModel`. The same standard CNN used across all files. Takes an MRI and outputs a [0, 1] probability of a tumor existing. 
+- **Lines 121-133:** `GeneratorModule`. Unlike the Hybrid model which generated images based on the Encoder's output, this Generator creates synthetic MRIs purely out of thin air. It accepts a completely random noise vector (`128-dimensional z`) and uses `ConvTranspose2d` layers to expand and upscale it into a synthetic 64x64 brain MRI.
+- **Lines 135-148:** `DiscriminatorModule`. The GAN Critic. Predicts whether a 64x64 image is authentic or synthesized by the Generator.
+- **Lines 149-160:** `GANOnly` Module. Chains the components. Feed it noise `z`, it returns a fake reconstruction, the classifier's prediction of that fake, and the discriminator's judgment.
+
+## 3. Evaluation Utilities (Lines 162-185)
+- Same automated methods for Dice Approximation, Inference Time testing, and generating file sizes in MB. Used later to populate the benchmark table in the paper.
+
+## 4. Training Loop (Lines 187-243)
+- **Lines 190-192:** Creates two main optimizers: `opt_gan_d` for the Discriminator, and `opt_gan_g` which simultaneously controls the Generator and the Classifier.
+- **Looping through 25 Epochs (Line 199):**
+  - **Lines 206:** Random noise `z` is sampled from standard normal distribution.
+  - **Lines 208-215:** **Discriminator Training.** The model creates fake images (`fakes`) using noise. Discriminator calculates loss on Real MRIs (`bce_loss(..., real_labels)`) and Fake MRIs (`bce_loss(..., fake_labels)`). Backpropagates and steps optimizer.
+  - **Lines 217-228:** **Generator & Classifier Training.** 
+    1. Generator generates fakes, and its loss (`g_adv_loss`) forces it to fool the Discriminator.
+    2. Classifier loss (`cls_loss`) is evaluated on the actual REAL images against target labels, maintaining accurate feature extraction.
+    3. The combined loss is backpropagated to update both the Generator's and Classifier's weights together.
+  - **Lines 232-240:** A simple test loop passes real images into the Classifier to log cross-validation loss metrics dynamically per epoch.
+
+## 5. Evaluation & Plotting (Lines 245-317)
+- **Lines 247-262:** Model locks into `.eval()`. The test batch images are pushed straight into `gan_model.classifier(imgs)`. As with the hybrid, the Generator and Discriminator merely served as heavy rotational training aids; they drop out of the pipeline during the actual medical prediction phase.
+- **Lines 264-311:** Matplotlib plotting blocks. Same standardized output formats: Train vs Test loss curve, Confusion Matrix, ROC-AUC curve, and a simulated Accuracy vs. Size graph.
+- **Lines 312-317:** Prints benchmarking data (Acc, Dice, Size, Speed) to console.
